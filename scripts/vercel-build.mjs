@@ -12,6 +12,17 @@ const run = (cmd) => {
   execSync(cmd, { stdio: "inherit" });
 };
 
+// La integración de Neon en Vercel creó las variables con prefijo (STORAGECASA_DATABASE_URL, …).
+// Se aceptan ambos nombres: si falta DATABASE_URL se toma la versión con prefijo.
+for (const name of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]) {
+  if (!process.env[name] && process.env[`STORAGECASA_${name}`]) {
+    process.env[name] = process.env[`STORAGECASA_${name}`];
+  }
+}
+if (!process.env.DATABASE_URL_UNPOOLED && process.env.DATABASE_URL) {
+  process.env.DATABASE_URL_UNPOOLED = process.env.DATABASE_URL;
+}
+
 const isProduction = process.env.VERCEL_ENV === "production";
 
 run("npm run build -w packages/shared");
@@ -22,7 +33,6 @@ if (isProduction) {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL no está definida en producción: conecta la base de datos (Neon) al proyecto.");
   }
-  if (!process.env.DATABASE_URL_UNPOOLED) process.env.DATABASE_URL_UNPOOLED = process.env.DATABASE_URL;
   run("npm run db:deploy -w apps/api");
   run("npm run db:bootstrap -w apps/api");
 } else {

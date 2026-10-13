@@ -3,6 +3,17 @@
 // Toda petición a /api/* llega aquí (rewrite en vercel.json) y la atiende la app Express
 // de apps/api, compilada a apps/api/dist durante el build (scripts/vercel-build.mjs).
 // Express ve la URL original (/api/auth/register, etc.), así que las rutas no cambian.
+// La integración de Neon en Vercel creó las variables con prefijo (STORAGECASA_DATABASE_URL, …).
+// Se aceptan ambos nombres: si falta DATABASE_URL se toma la versión con prefijo.
+for (const name of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"]) {
+  if (!process.env[name] && process.env[`STORAGECASA_${name}`]) {
+    process.env[name] = process.env[`STORAGECASA_${name}`];
+  }
+}
+if (!process.env.DATABASE_URL_UNPOOLED && process.env.DATABASE_URL) {
+  process.env.DATABASE_URL_UNPOOLED = process.env.DATABASE_URL;
+}
+
 const { getMissingEnv } = require("../apps/api/dist/lib/env");
 
 const missing = getMissingEnv();
