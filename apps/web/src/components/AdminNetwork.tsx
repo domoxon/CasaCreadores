@@ -1,5 +1,6 @@
 import { Download, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,7 +159,9 @@ export function AdminNetwork() {
               {filtered.map((c) => (
                 <tr key={c.id} className="align-top">
                   <td className="px-3 py-3">
-                    <p className="font-medium text-foreground">{c.name || c.email}</p>
+                    <Link to={`/admin/creadores/${c.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                      {c.name || c.email}
+                    </Link>
                     <p className="text-xs text-muted-foreground">{c.email}</p>
                     {c.contact && <p className="text-xs text-muted-foreground">{c.contact}</p>}
                     <p className="text-xs text-muted-foreground">Alta {new Date(c.joinedAt).toLocaleDateString("es")} · {c.campaignApplications} aplicaciones</p>

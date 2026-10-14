@@ -195,7 +195,7 @@ export function AdminPanel() {
                 <div key={c.id}>
                   <div className="flex flex-wrap items-center justify-between gap-3 py-5">
                     <div>
-                      <p className="font-medium text-foreground">{c.xHandle || c.igHandle || c.user.email}</p>
+                      <a href={`/admin/creadores/${c.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">{c.xHandle || c.igHandle || c.user.email}</a>
                       <p className="text-sm text-muted-foreground">
                         {c.user.email} · {c.followerCount.toLocaleString()} seguidores · {c.nichos.join(", ")}
                       </p>

@@ -19,7 +19,7 @@ type Applicant = {
   id: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   appliedAt: string;
-  creator: { xHandle: string | null; igHandle: string | null; followerCount: number; nichos: string[]; user: { email: string } };
+  creator: { id: string; xHandle: string | null; igHandle: string | null; followerCount: number; nichos: string[]; user: { email: string } };
   profile: { name: string; country: string; contact: string } | null;
 };
 
@@ -304,7 +304,9 @@ export function CampaignEditor() {
                 <div key={a.id}>
                   <div className="flex flex-wrap items-center justify-between gap-3 py-4">
                     <div>
-                      <p className="font-medium text-foreground">{a.profile?.name || a.creator.xHandle || a.creator.igHandle || a.creator.user.email}</p>
+                      <Link to={`/admin/creadores/${a.creator.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
+                        {a.profile?.name || a.creator.xHandle || a.creator.igHandle || a.creator.user.email}
+                      </Link>
                       <p className="text-sm text-muted-foreground">
                         {a.creator.user.email} · {a.profile?.country ? `${a.profile.country} · ` : ""}
                         {a.creator.followerCount.toLocaleString("es")} seguidores · {a.creator.nichos.join(", ")}

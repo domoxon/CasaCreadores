@@ -73,6 +73,48 @@ router.get("/network", async (_req, res, next) => {
   }
 });
 
+// Ficha completa de un creador para el panel: perfil, solicitud original e historial de campañas.
+router.get("/creators/:id/profile", async (req, res, next) => {
+  try {
+    const c = await prisma.creator.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { email: true, createdAt: true } },
+        applications: {
+          orderBy: { appliedAt: "desc" },
+          include: { campaign: { select: { id: true, title: true, brandName: true, status: true } } },
+        },
+      },
+    });
+    if (!c) return res.status(404).json({ error: "Creador no encontrado." });
+    const a = await prisma.creatorApplication.findFirst({ where: { userId: c.userId } });
+    res.json({
+      id: c.id,
+      email: c.user.email,
+      joinedAt: c.user.createdAt,
+      status: c.verifiedStatus,
+      followerCount: c.followerCount,
+      nichos: c.nichos,
+      bio: c.bio,
+      handles: { X: c.xHandle, Instagram: c.igHandle, TikTok: c.tiktokHandle },
+      application: a
+        ? {
+            name: a.name, country: a.country, languages: a.languages, contact: a.contact,
+            platforms: a.platforms, contentTypes: a.contentTypes, payoutMethod: a.payoutMethod,
+            bestPosts: a.bestPosts, bio: a.bio, referredBy: a.referredBy, createdAt: a.createdAt,
+            reviewedAt: a.reviewedAt, reviewToken: a.reviewToken,
+          }
+        : null,
+      campaigns: c.applications.map((x) => ({
+        id: x.id, status: x.status, appliedAt: x.appliedAt,
+        campaign: x.campaign,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.patch("/creators/:id/verify", validateBody(verifyCreatorSchema), async (req, res, next) => {
   try {
     const creator = await prisma.creator.update({

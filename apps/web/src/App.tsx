@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ScrollToHash } from "./components/ScrollToHash";
 import { Account } from "./pages/Account";
 import { Activate } from "./pages/Activate";
+import { AdminCreatorProfile } from "./pages/AdminCreatorProfile";
 import { AdminPanel } from "./pages/AdminPanel";
 import { Apply } from "./pages/Apply";
 import { CampaignEditor } from "./pages/CampaignEditor";
@@ -104,6 +105,14 @@ export default function App() {
             }
           />
 
+          <Route
+            path="/admin/creadores/:id"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminCreatorProfile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/campanas/nueva"
             element={
