@@ -5,6 +5,7 @@ import { isEmailDeliveryConfigured } from "./lib/email";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { apiLimiter } from "./middleware/rateLimit";
 import adminRoutes from "./routes/admin.routes";
+import adminCampaignsRoutes from "./routes/adminCampaigns.routes";
 import applicationsRoutes from "./routes/applications.routes";
 import authRoutes from "./routes/auth.routes";
 import brandsRoutes from "./routes/brands.routes";
@@ -37,6 +38,7 @@ app.use("/api/brands", brandsRoutes);
 app.use("/api/creators", creatorsRoutes);
 app.use("/api/campaigns", campaignsRoutes);
 app.use("/api/payments", paymentsRoutes);
+app.use("/api/admin", adminCampaignsRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFoundHandler);

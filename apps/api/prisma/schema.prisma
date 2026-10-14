@@ -98,6 +98,26 @@ model Campaign {
   status            CampaignStatus @default(DRAFT)
   createdAt         DateTime       @default(now())
 
+  // Ficha pública de la campaña (la crea el equipo desde /admin/campanas).
+  // brandName/brandWebsite = la marca cliente que se muestra; brandId apunta a la cuenta
+  // interna de operaciones que "posee" la campaña en la base de datos.
+  brandName         String?
+  brandWebsite      String?
+  brandLogoUrl      String?
+  coverImageUrl     String?
+  brandContext      String         @default("")
+  deliverables      String         @default("")
+  requirements      String         @default("")
+  socialLinks       Json?
+  platforms         String[]       @default([])
+  countries         String[]       @default([])
+  nichos            String[]       @default([])
+  paymentPerCreator Float?
+  spots             Int?
+  startDate         DateTime?
+  endDate           DateTime?
+  publishedAt       DateTime?
+
   applications CampaignApplication[]
   payments     Payment[]
 }

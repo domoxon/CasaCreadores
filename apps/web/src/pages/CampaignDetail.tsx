@@ -98,40 +98,107 @@ export function CampaignDetail() {
     return <div className="container py-24 text-center text-sm text-muted-foreground">Cargando...</div>;
   }
 
-  return (
-    <div className="container max-w-3xl py-16">
-      <div className="mb-2 flex items-center gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{campaign.title}</h1>
-        <Badge variant="secondary">{campaign.status}</Badge>
-      </div>
-      <p className="mb-8 text-sm text-muted-foreground">
-        {campaign.brand.companyName} · {campaign.brand.industry}
-      </p>
-      <p className="mb-10 whitespace-pre-line leading-relaxed text-foreground">{campaign.description}</p>
+  const brandName = campaign.brandName || campaign.brand.companyName;
+  const socials = Object.entries(campaign.socialLinks || {}).filter(([, v]) => v);
+  const SOCIAL_LABEL: Record<string, string> = {
+    website: "Web", x: "X", instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", linkedin: "LinkedIn", telegram: "Telegram", discord: "Discord",
+  };
+  const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" }) : null);
+  const facts: Array<[string, string]> = [
+    ...(campaign.paymentPerCreator != null ? ([["Pago por creador", `$${campaign.paymentPerCreator.toLocaleString("es")} USDC`]] as Array<[string, string]>) : []),
+    ...(campaign.spots != null ? ([["Plazas", String(campaign.spots)]] as Array<[string, string]>) : []),
+    ["Duración", `${campaign.duration} días`],
+    ...(campaign.startDate ? ([["Fechas", `${fmtDate(campaign.startDate)}${campaign.endDate ? ` – ${fmtDate(campaign.endDate)}` : ""}`]] as Array<[string, string]>) : []),
+    ["Mín. seguidores", campaign.minFollowers.toLocaleString("es")],
+  ];
+  const tags: Array<[string, string[] | undefined]> = [
+    ["Plataformas", campaign.platforms],
+    ["Países", campaign.countries],
+    ["Nichos", campaign.nichos],
+  ];
 
-      <div className="mb-10 grid grid-cols-2 gap-6 border-y border-border py-6 sm:grid-cols-4">
+  return (
+    <div className="container max-w-3xl py-12">
+      {campaign.coverImageUrl && (
+        <img src={campaign.coverImageUrl} alt="" className="mb-8 aspect-[16/9] w-full rounded-xl border border-border object-cover" />
+      )}
+      <div className="mb-6 flex items-center gap-3">
+        {campaign.brandLogoUrl && (
+          <img src={campaign.brandLogoUrl} alt="" className="h-12 w-12 rounded-lg border border-border object-cover" />
+        )}
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Presupuesto</p>
-          <p className="mt-1 font-medium text-foreground">${campaign.budgetUSDC.toLocaleString()} USDC</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Duración</p>
-          <p className="mt-1 font-medium text-foreground">{campaign.duration} días</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Min. seguidores</p>
-          <p className="mt-1 font-medium text-foreground">{campaign.minFollowers.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Min. engagement</p>
-          <p className="mt-1 font-medium text-foreground">{campaign.minEngagementRate}%</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {campaign.brandWebsite ? (
+              <a href={campaign.brandWebsite} target="_blank" rel="noreferrer" className="hover:underline">{brandName}</a>
+            ) : (
+              brandName
+            )}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{campaign.title}</h1>
+            {campaign.status !== "ACTIVE" && <Badge variant="secondary">{campaign.status === "PAUSED" ? "Pausada" : campaign.status === "COMPLETED" ? "Finalizada" : "Borrador"}</Badge>}
+          </div>
         </div>
       </div>
+
+      <div className="mb-8 grid grid-cols-2 gap-6 border-y border-border py-5 sm:grid-cols-3">
+        {facts.map(([k, v]) => (
+          <div key={k}>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">{k}</p>
+            <p className="mt-1 font-medium text-foreground">{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">La campaña</h2>
+      <p className="mb-8 whitespace-pre-line leading-relaxed text-foreground">{campaign.description}</p>
+
+      {campaign.deliverables && (
+        <>
+          <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">Entregables</h2>
+          <p className="mb-8 whitespace-pre-line leading-relaxed text-foreground">{campaign.deliverables}</p>
+        </>
+      )}
+      {campaign.requirements && (
+        <>
+          <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">Requisitos</h2>
+          <p className="mb-8 whitespace-pre-line leading-relaxed text-foreground">{campaign.requirements}</p>
+        </>
+      )}
+      {campaign.brandContext && (
+        <>
+          <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">Sobre {brandName}</h2>
+          <p className="mb-6 whitespace-pre-line leading-relaxed text-foreground">{campaign.brandContext}</p>
+        </>
+      )}
+      {socials.length > 0 && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {socials.map(([k, v]) => (
+            <a key={k} href={v} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-foreground/50">
+              {SOCIAL_LABEL[k] || k}
+            </a>
+          ))}
+        </div>
+      )}
+      {tags.some(([, v]) => v && v.length > 0) && (
+        <div className="mb-10 flex flex-col gap-3">
+          {tags.filter(([, v]) => v && v.length > 0).map(([k, v]) => (
+            <div key={k} className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="w-24 text-muted-foreground">{k}</span>
+              {v!.map((x) => (
+                <Badge key={x} variant="outline">{x}</Badge>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
 
       {user?.role === "CREADOR" && (
         <div className="mb-12">
           {myApplication ? (
-            <Badge variant={STATUS_VARIANT[myApplication.status]}>Ya aplicaste · {myApplication.status}</Badge>
+            <Badge variant={STATUS_VARIANT[myApplication.status]}>
+              {myApplication.status === "ACCEPTED" ? "¡Fuiste seleccionado!" : myApplication.status === "REJECTED" ? "No seleccionado esta vez" : "Ya aplicaste · en revisión"}
+            </Badge>
           ) : (
             <Button onClick={handleApply} disabled={applying || campaign.status !== "ACTIVE"}>
               {applying ? "Aplicando..." : "Aplicar a esta campaña"}

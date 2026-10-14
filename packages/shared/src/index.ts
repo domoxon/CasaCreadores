@@ -72,6 +72,22 @@ export interface Campaign {
   minEngagementRate: number;
   status: CampaignStatus;
   createdAt: string;
+  brandName?: string | null;
+  brandWebsite?: string | null;
+  brandLogoUrl?: string | null;
+  coverImageUrl?: string | null;
+  brandContext?: string;
+  deliverables?: string;
+  requirements?: string;
+  socialLinks?: Record<string, string> | null;
+  platforms?: string[];
+  countries?: string[];
+  nichos?: string[];
+  paymentPerCreator?: number | null;
+  spots?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  publishedAt?: string | null;
 }
 
 export interface CampaignApplication {

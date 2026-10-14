@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE "Campaign" ADD COLUMN     "brandName" TEXT,
+ADD COLUMN     "brandWebsite" TEXT,
+ADD COLUMN     "brandLogoUrl" TEXT,
+ADD COLUMN     "coverImageUrl" TEXT,
+ADD COLUMN     "brandContext" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "deliverables" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "requirements" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "socialLinks" JSONB,
+ADD COLUMN     "platforms" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "countries" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "nichos" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "paymentPerCreator" DOUBLE PRECISION,
+ADD COLUMN     "spots" INTEGER,
+ADD COLUMN     "startDate" TIMESTAMP(3),
+ADD COLUMN     "endDate" TIMESTAMP(3),
+ADD COLUMN     "publishedAt" TIMESTAMP(3);

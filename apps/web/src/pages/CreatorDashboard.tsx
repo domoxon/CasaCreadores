@@ -220,7 +220,7 @@ export function CreatorDashboard() {
                 <Link to={`/campanas/${a.campaign.id}`} className="font-medium text-foreground hover:underline">
                   {a.campaign.title}
                 </Link>
-                <Badge variant={STATUS_VARIANT[a.status]}>{a.status}</Badge>
+                <Badge variant={STATUS_VARIANT[a.status]}>{a.status === "ACCEPTED" ? "Seleccionado" : a.status === "REJECTED" ? "No seleccionado" : "En revisión"}</Badge>
               </div>
               <Separator />
             </div>
@@ -237,13 +237,22 @@ export function CreatorDashboard() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {campaigns.map((c) => (
-            <Card key={c.id} className="shadow-none">
-              <CardContent className="pt-6">
+            <Card key={c.id} className="overflow-hidden shadow-none">
+              {c.coverImageUrl && <img src={c.coverImageUrl} alt="" className="aspect-[16/9] w-full object-cover" />}
+              <CardContent className="pt-5">
+                <div className="mb-1 flex items-center gap-2">
+                  {c.brandLogoUrl && <img src={c.brandLogoUrl} alt="" className="h-6 w-6 rounded border border-border object-cover" />}
+                  {c.brandName && <span className="text-xs font-medium text-muted-foreground">{c.brandName}</span>}
+                </div>
                 <Link to={`/campanas/${c.id}`} className="font-medium text-foreground hover:underline">
                   {c.title}
                 </Link>
                 <p className="my-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{c.description}</p>
-                <p className="mb-3 text-sm font-medium text-foreground">${c.budgetUSDC.toLocaleString()} USDC</p>
+                {c.paymentPerCreator != null && (
+                  <p className="mb-3 text-sm font-medium text-foreground">
+                    ${c.paymentPerCreator.toLocaleString("es")} USDC por creador{c.spots != null ? ` · ${c.spots} plazas` : ""}
+                  </p>
+                )}
                 {appliedIds.has(c.id) ? (
                   <Badge variant="outline">Ya aplicaste</Badge>
                 ) : (

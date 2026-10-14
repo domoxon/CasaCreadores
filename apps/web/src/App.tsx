@@ -7,6 +7,7 @@ import { Account } from "./pages/Account";
 import { Activate } from "./pages/Activate";
 import { AdminPanel } from "./pages/AdminPanel";
 import { Apply } from "./pages/Apply";
+import { CampaignEditor } from "./pages/CampaignEditor";
 import { BrandDashboard } from "./pages/BrandDashboard";
 import { CampaignCreate } from "./pages/CampaignCreate";
 import { CampaignDetail } from "./pages/CampaignDetail";
@@ -99,6 +100,23 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/campanas/nueva"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <CampaignEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/campanas/:id"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <CampaignEditor />
               </ProtectedRoute>
             }
           />

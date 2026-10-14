@@ -1,6 +1,7 @@
 import type { Creator, Payment } from "@casa-creadores/shared";
 import { Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AdminCampaigns } from "@/components/AdminCampaigns";
 import { AdminNetwork } from "@/components/AdminNetwork";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,11 +129,12 @@ export function AdminPanel() {
         </div>
       )}
 
-      <Tabs defaultValue="solicitudes">
+      <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "solicitudes"}>
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="solicitudes">
             Solicitudes ({applications.filter((a) => a.status === "PENDING").length})
           </TabsTrigger>
+          <TabsTrigger value="campanas">Campañas</TabsTrigger>
           <TabsTrigger value="red">Red de creadores</TabsTrigger>
           <TabsTrigger value="creadores">Creadores pendientes ({pendingCreators.length})</TabsTrigger>
           <TabsTrigger value="pagos">Pagos ({payments.length})</TabsTrigger>
@@ -171,6 +173,10 @@ export function AdminPanel() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="campanas">
+          <AdminCampaigns />
         </TabsContent>
 
         <TabsContent value="red">
