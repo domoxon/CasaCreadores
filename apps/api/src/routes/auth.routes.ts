@@ -81,6 +81,22 @@ router.post("/register", authLimiter, validateBody(registerSchema), async (req, 
   }
 });
 
+router.post("/change-password", requireAuth, authLimiter, async (req: AuthRequest, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: "Faltan datos." });
+    if (newPassword.length < 8) return res.status(400).json({ error: "La nueva contraseña debe tener al menos 8 caracteres." });
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+      return res.status(401).json({ error: "La contraseña actual no es correcta." });
+    }
+    await prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(newPassword, 10) } });
+    res.json({ message: "Contraseña actualizada." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/verify", async (req, res, next) => {
   try {
     const { token } = req.body as { token?: string };

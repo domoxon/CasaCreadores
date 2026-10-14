@@ -3,6 +3,7 @@ import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ScrollToHash } from "./components/ScrollToHash";
+import { Account } from "./pages/Account";
 import { Activate } from "./pages/Activate";
 import { AdminPanel } from "./pages/AdminPanel";
 import { Apply } from "./pages/Apply";
@@ -30,7 +31,22 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/aplicar" element={<Apply />} />
           <Route path="/registro" element={<Navigate to="/aplicar" replace />} />
-          <Route path="/revisar/:token" element={<ReviewApplication />} />
+          <Route
+            path="/revisar/:token"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <ReviewApplication />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cuenta"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/activar/:token" element={<Activate />} />
           <Route path="/contacto" element={<Contact />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

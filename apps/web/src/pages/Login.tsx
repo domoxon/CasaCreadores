@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { toUserMessage } from "../lib/errors";
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,10 @@ export function Login() {
     setLoading(true);
     try {
       const user = await login(email, password);
+      if (from && from !== "/login") {
+        navigate(from, { replace: true });
+        return;
+      }
       if (user.role === "MARCA") navigate("/marca", { replace: true });
       else if (user.role === "CREADOR") navigate("/creador", { replace: true });
       else navigate("/admin", { replace: true });

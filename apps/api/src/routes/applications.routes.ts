@@ -11,8 +11,8 @@ import { activateSchema, applicationSchema, reviewSchema } from "../validators/a
 
 // Flujo de solicitud -> revisión -> activación:
 //   POST /api/applications                 (público)  crea la solicitud y avisa al equipo por email
-//   GET  /api/applications/review/:token   (enlace)   datos para la página /revisar/:token
-//   POST /api/applications/review/:token   (enlace)   aprobar / rechazar; al aprobar envía el enlace de activación
+//   GET  /api/applications/review/:token   (ADMIN)    datos para la página /revisar/:token
+//   POST /api/applications/review/:token   (ADMIN)    aprobar / rechazar; al aprobar envía el enlace de activación
 //   GET  /api/applications/invite/:token   (enlace)   datos para la página /activar/:token
 //   POST /api/applications/invite/:token   (enlace)   crea la cuenta CREADOR ya aprobada y abre sesión
 //   GET  /api/applications                 (ADMIN)    listado para /admin
@@ -124,7 +124,7 @@ router.post("/", contactLimiter, validateBody(applicationSchema), async (req, re
 });
 
 // --- 2. Revisión (desde el email del equipo) --------------------------------------------
-router.get("/review/:token", async (req, res, next) => {
+router.get("/review/:token", requireAuth, requireRole("ADMIN"), async (req, res, next) => {
   try {
     const a = await prisma.creatorApplication.findUnique({ where: { reviewToken: req.params.token } });
     if (!a) return res.status(404).json({ error: "Solicitud no encontrada." });
@@ -134,7 +134,7 @@ router.get("/review/:token", async (req, res, next) => {
   }
 });
 
-router.post("/review/:token", validateBody(reviewSchema), async (req, res, next) => {
+router.post("/review/:token", requireAuth, requireRole("ADMIN"), validateBody(reviewSchema), async (req, res, next) => {
   try {
     const a = await prisma.creatorApplication.findUnique({ where: { reviewToken: req.params.token } });
     if (!a) return res.status(404).json({ error: "Solicitud no encontrada." });

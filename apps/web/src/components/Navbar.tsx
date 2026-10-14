@@ -27,6 +27,9 @@ export function Navbar() {
               <Link to={dashboardPath} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 Mi panel
               </Link>
+              <Link to="/cuenta" className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline">
+                Mi cuenta
+              </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Cerrar sesión
               </Button>

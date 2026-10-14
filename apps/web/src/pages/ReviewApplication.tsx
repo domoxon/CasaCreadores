@@ -24,8 +24,8 @@ function linkFor(platform: string, value: string): string | null {
   return base[platform] ? base[platform] + handle : null;
 }
 
-// Página a la que lleva el email "Nueva solicitud". El enlace secreto (token) es la
-// autorización: quien lo tiene puede aprobar o rechazar. Aprobar = POST (nunca GET).
+// Página a la que lleva el email "Nueva solicitud". Solo la cuenta ADMIN puede verla
+// (si no hay sesión, pide iniciar sesión y vuelve aquí). Aprobar = POST (nunca GET).
 export function ReviewApplication() {
   const { token } = useParams();
   const [app, setApp] = useState<Application | null>(null);
@@ -35,7 +35,7 @@ export function ReviewApplication() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    apiFetch<Application>(`/applications/review/${token}`, { skipAuth: true })
+    apiFetch<Application>(`/applications/review/${token}`)
       .then(setApp)
       .catch((err) => setError(toUserMessage(err, "No encontramos esta solicitud.")));
   }, [token]);
@@ -46,7 +46,6 @@ export function ReviewApplication() {
     try {
       const r = await apiFetch<{ status: string; inviteUrl?: string; emailSent: boolean }>(`/applications/review/${token}`, {
         method: "POST",
-        skipAuth: true,
         body: JSON.stringify({ action }),
       });
       setResult(r);
