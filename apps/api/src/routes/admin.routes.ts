@@ -29,6 +29,50 @@ router.get("/creators", async (req, res, next) => {
   }
 });
 
+// Red de creadores: todos los creadores con cuenta, con los datos de su solicitud
+// (nombre, país, contacto, cobro…) cuando entraron por /aplicar.
+router.get("/network", async (_req, res, next) => {
+  try {
+    const creators = await prisma.creator.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { email: true, createdAt: true } },
+        _count: { select: { applications: true } },
+      },
+    });
+    const apps = await prisma.creatorApplication.findMany({
+      where: { userId: { in: creators.map((c) => c.userId) } },
+    });
+    const byUser = new Map(apps.map((a) => [a.userId, a]));
+    res.json(
+      creators.map((c) => {
+        const a = byUser.get(c.userId);
+        return {
+          id: c.id,
+          email: c.user.email,
+          joinedAt: c.user.createdAt,
+          status: c.verifiedStatus,
+          followerCount: c.followerCount,
+          nichos: c.nichos,
+          bio: c.bio,
+          handles: { X: c.xHandle, Instagram: c.igHandle, TikTok: c.tiktokHandle },
+          campaignApplications: c._count.applications,
+          name: a?.name ?? null,
+          country: a?.country ?? null,
+          languages: a?.languages ?? [],
+          contact: a?.contact ?? null,
+          platforms: (a?.platforms as Record<string, string> | undefined) ?? null,
+          contentTypes: a?.contentTypes ?? [],
+          payoutMethod: a?.payoutMethod ?? null,
+          reviewToken: a?.reviewToken ?? null,
+        };
+      })
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.patch("/creators/:id/verify", validateBody(verifyCreatorSchema), async (req, res, next) => {
   try {
     const creator = await prisma.creator.update({
