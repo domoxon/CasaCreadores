@@ -82,6 +82,12 @@ model Creator {
   nichos         String[]       @default([])
   createdAt      DateTime       @default(now())
 
+  // Datos de cobro que el propio creador mantiene en su panel.
+  // payoutMethod: CRYPTO | BINANCE_PAY | BANK | WISE · payoutDetails: campos según el método.
+  payoutMethod    String?
+  payoutDetails   Json?
+  payoutUpdatedAt DateTime?
+
   applications CampaignApplication[]
 }
 
@@ -131,7 +137,48 @@ model CampaignApplication {
   status     ApplicationStatus @default(PENDING)
   appliedAt  DateTime          @default(now())
 
+  // Pago al creador por esta campaña (lo gestiona el equipo).
+  payoutAmount    Float?
+  payoutStatus    PayoutStatus @default(NOT_DUE)
+  payoutReference String?
+  paidAt          DateTime?
+
+  submissions ContentSubmission[]
+
   @@unique([campaignId, creatorId])
+}
+
+enum PayoutStatus {
+  NOT_DUE
+  DUE
+  PAID
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  PUBLISHED
+  VERIFIED
+}
+
+// Entrega de contenido de un creador seleccionado. El archivo vive en su Drive/Dropbox
+// (contentUrl); cuando el equipo aprueba, el creador pega el enlace del post publicado
+// (postUrl) y el equipo lo verifica. Cada nueva versión es una fila nueva.
+model ContentSubmission {
+  id            String              @id @default(uuid())
+  applicationId String
+  application   CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contentUrl    String
+  notes         String              @default("")
+  postUrl       String?
+  status        SubmissionStatus    @default(SUBMITTED)
+  feedback      String?
+  createdAt     DateTime            @default(now())
+  reviewedAt    DateTime?
+  publishedAt   DateTime?
+
+  @@index([applicationId])
 }
 
 model ContactMessage {

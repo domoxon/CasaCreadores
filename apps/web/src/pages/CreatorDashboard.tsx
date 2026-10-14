@@ -3,6 +3,7 @@ import { NICHOS_CRIPTO } from "@casa-creadores/shared";
 import { BadgeCheck, Inbox } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { PayoutCard } from "@/components/PayoutCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -206,6 +207,8 @@ export function CreatorDashboard() {
           Editar perfil
         </Button>
       </div>
+
+      <PayoutCard />
 
       <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">Tus aplicaciones</h2>
       {applications.length === 0 ? (

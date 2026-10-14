@@ -2,6 +2,7 @@ import type { Campaign } from "@casa-creadores/shared";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AdminSubmissions } from "@/components/AdminSubmissions";
 import { Chips } from "@/components/Chips";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Badge } from "@/components/ui/badge";
@@ -290,6 +291,8 @@ export function CampaignEditor() {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       </form>
+
+      {id && <AdminSubmissions key={applicants.map((a) => a.status).join()} campaignId={id} defaultPayment={campaign?.paymentPerCreator ?? null} />}
 
       {id && (
         <section className="mt-12">

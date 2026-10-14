@@ -74,6 +74,13 @@ Creator flow:
 3. Open a campaign → "Aplicar a esta campaña" → badge "Ya aplicaste · PENDING"
 4. Log out, log back in → same account and data
 
+Content + payout flow (creator selected for a campaign):
+- `/campanas/:id` → "Tu entrega": submit Drive/Dropbox link → admin approves or requests changes
+  in `/admin/campanas/:id` → creator pastes live post URL → admin "Verificar publicado" →
+  payout becomes DUE → admin "Marcar como pagado" (amount + tx hash/reference).
+- Creators keep payout details (crypto wallet + network, Binance Pay, bank, Wise) on `/creador`.
+  Content files are never stored by us — only links.
+
 Public/brand flow:
 5. `/` renders hero, stats, cómo funciona, paquetes, países, CTA — no brand signup links
 6. `/contacto` → submit → "Mensaje enviado"

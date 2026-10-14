@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { CAMPAIGN_STATUS_LABEL } from "@/lib/campaignOptions";
+import { describePayout, PAYOUT_STATUS_LABEL, PayoutDetails } from "@/lib/payout";
 import { toUserMessage } from "@/lib/errors";
 
 interface Profile {
@@ -16,6 +17,7 @@ interface Profile {
   nichos: string[];
   bio: string;
   handles: Record<string, string | null>;
+  payout: { method: string | null; details: PayoutDetails | null; updatedAt: string | null };
   application: {
     name: string; country: string; languages: string[]; contact: string; platforms: Record<string, string>;
     contentTypes: string[]; payoutMethod: string; bestPosts: string; bio: string; referredBy: string | null;
@@ -23,6 +25,7 @@ interface Profile {
   } | null;
   campaigns: Array<{
     id: string; status: "PENDING" | "ACCEPTED" | "REJECTED"; appliedAt: string;
+    payoutStatus: string; payoutAmount: number | null; paidAt: string | null;
     campaign: { id: string; title: string; brandName: string | null; status: string };
   }>;
 }
@@ -105,7 +108,18 @@ export function AdminCreatorProfile() {
     ["Seguidores", p.followerCount.toLocaleString("es")],
     ["Nichos", p.nichos.join(", ") || "—"],
     ["Contenido", a?.contentTypes.join(", ") || "—"],
-    ["Cobro", a?.payoutMethod || "—"],
+    [
+      "Datos de cobro",
+      p.payout.method ? (
+        <div className="flex flex-col gap-0.5">
+          {describePayout(p.payout.method, p.payout.details).map(([k, v]) => (
+            <span key={k} className="break-all"><span className="text-muted-foreground">{k}:</span> {v}</span>
+          ))}
+        </div>
+      ) : (
+        `Sin cargar${a?.payoutMethod ? ` (en la solicitud eligió: ${a.payoutMethod})` : ""}`
+      ),
+    ],
     ["Mejores posts", a?.bestPosts || "—"],
     ["Bio", p.bio || a?.bio || "—"],
     ["Referido por", a?.referredBy || "—"],
@@ -164,7 +178,14 @@ export function AdminCreatorProfile() {
                     {x.campaign.brandName || "—"} · aplicó el {fmt(x.appliedAt)} · campaña {CAMPAIGN_STATUS_LABEL[x.campaign.status]?.toLowerCase()}
                   </p>
                 </div>
-                <Badge variant={variant}>{label}</Badge>
+                <div className="flex items-center gap-2">
+                  {x.status === "ACCEPTED" && (
+                    <span className="text-xs text-muted-foreground">
+                      {PAYOUT_STATUS_LABEL[x.payoutStatus]}{x.payoutAmount != null ? ` · $${x.payoutAmount}` : ""}
+                    </span>
+                  )}
+                  <Badge variant={variant}>{label}</Badge>
+                </div>
               </div>
             );
           })}

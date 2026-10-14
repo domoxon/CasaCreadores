@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.routes";
 import brandsRoutes from "./routes/brands.routes";
 import campaignsRoutes from "./routes/campaigns.routes";
 import contactRoutes from "./routes/contact.routes";
+import creatorWorkRoutes from "./routes/creatorWork.routes";
 import creatorsRoutes from "./routes/creators.routes";
 import paymentsRoutes from "./routes/payments.routes";
 
@@ -36,6 +37,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/applications", applicationsRoutes);
 app.use("/api/brands", brandsRoutes);
 app.use("/api/creators", creatorsRoutes);
+app.use("/api/creator", creatorWorkRoutes);
 app.use("/api/campaigns", campaignsRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/admin", adminCampaignsRoutes);

@@ -1,6 +1,7 @@
 import type { Campaign, CampaignApplication, Creator } from "@casa-creadores/shared";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { CreatorWorkPanel } from "@/components/CreatorWorkPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -207,6 +208,8 @@ export function CampaignDetail() {
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         </div>
       )}
+
+      {user?.role === "CREADOR" && myApplication?.status === "ACCEPTED" && id && <CreatorWorkPanel campaignId={id} />}
 
       {user?.role === "MARCA" && (
         <div>

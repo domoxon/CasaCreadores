@@ -97,6 +97,7 @@ router.get("/creators/:id/profile", async (req, res, next) => {
       nichos: c.nichos,
       bio: c.bio,
       handles: { X: c.xHandle, Instagram: c.igHandle, TikTok: c.tiktokHandle },
+      payout: { method: c.payoutMethod, details: c.payoutDetails, updatedAt: c.payoutUpdatedAt },
       application: a
         ? {
             name: a.name, country: a.country, languages: a.languages, contact: a.contact,
@@ -107,6 +108,7 @@ router.get("/creators/:id/profile", async (req, res, next) => {
         : null,
       campaigns: c.applications.map((x) => ({
         id: x.id, status: x.status, appliedAt: x.appliedAt,
+        payoutStatus: x.payoutStatus, payoutAmount: x.payoutAmount, paidAt: x.paidAt,
         campaign: x.campaign,
       })),
     });

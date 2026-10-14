@@ -5,6 +5,7 @@ import { renderEmail, sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { AuthRequest, requireAuth, requireRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
+import { payoutUpdateSchema, submissionReviewSchema } from "../validators/creatorWork.validators";
 import {
   adminApplicationDecisionSchema,
   adminCampaignSchema,
@@ -163,6 +164,99 @@ router.patch(
     }
   }
 );
+
+// --- Entregas de contenido y pagos ---------------------------------------------------------
+
+// Creadores seleccionados de una campaña con sus entregas, datos de cobro y estado de pago.
+router.get("/campaigns/:id/submissions", async (req, res, next) => {
+  try {
+    const apps = await prisma.campaignApplication.findMany({
+      where: { campaignId: req.params.id, status: "ACCEPTED" },
+      orderBy: { appliedAt: "asc" },
+      include: {
+        creator: { include: { user: { select: { email: true } } } },
+        submissions: { orderBy: { createdAt: "desc" } },
+      },
+    });
+    const names = await prisma.creatorApplication.findMany({
+      where: { userId: { in: apps.map((a) => a.creator.userId) } },
+      select: { userId: true, name: true },
+    });
+    const byUser = new Map(names.map((n) => [n.userId, n.name]));
+    res.json(
+      apps.map((a) => ({
+        applicationId: a.id,
+        creatorId: a.creator.id,
+        name: byUser.get(a.creator.userId) || a.creator.xHandle || a.creator.igHandle || a.creator.user.email,
+        email: a.creator.user.email,
+        payoutMethod: a.creator.payoutMethod,
+        payoutDetails: a.creator.payoutDetails,
+        payoutStatus: a.payoutStatus,
+        payoutAmount: a.payoutAmount,
+        payoutReference: a.payoutReference,
+        paidAt: a.paidAt,
+        submissions: a.submissions,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/submissions/:id", validateBody(submissionReviewSchema), async (req, res, next) => {
+  try {
+    const sub = await prisma.contentSubmission.findUnique({
+      where: { id: req.params.id },
+      include: { application: { include: { campaign: true, creator: { include: { user: { select: { email: true } } } } } } },
+    });
+    if (!sub) return res.status(404).json({ error: "Entrega no encontrada." });
+    const { status, feedback } = req.body as { status: "APPROVED" | "CHANGES_REQUESTED" | "VERIFIED"; feedback?: string | null };
+    if (status === "VERIFIED" && !sub.postUrl) {
+      return res.status(400).json({ error: "El creador todavía no pegó el enlace del post publicado." });
+    }
+    const updated = await prisma.contentSubmission.update({
+      where: { id: sub.id },
+      data: { status, feedback: feedback ?? sub.feedback, reviewedAt: new Date() },
+    });
+    // Post verificado => el pago pasa a "pendiente de pago" con el importe por defecto de la campaña.
+    if (status === "VERIFIED" && sub.application.payoutStatus === "NOT_DUE") {
+      await prisma.campaignApplication.update({
+        where: { id: sub.applicationId },
+        data: { payoutStatus: "DUE", payoutAmount: sub.application.payoutAmount ?? sub.application.campaign.paymentPerCreator },
+      });
+    }
+    const title = sub.application.campaign.title;
+    const messages: Record<string, { subject: string; paragraphs: string[] }> = {
+      APPROVED: { subject: `Contenido aprobado: ${title}`, paragraphs: ["¡Tu contenido fue aprobado! Publícalo según el brief y luego pega el enlace del post en la campaña, desde tu panel."] },
+      CHANGES_REQUESTED: { subject: `Cambios pedidos: ${title}`, paragraphs: ["El equipo pidió algunos cambios en tu contenido.", ...(feedback ? [`Comentarios: ${feedback}`] : []), "Sube una nueva versión desde la campaña en tu panel."] },
+      VERIFIED: { subject: `Publicación verificada: ${title}`, paragraphs: ["Verificamos tu publicación. Tu pago queda pendiente y lo enviaremos a los datos de cobro de tu cuenta."] },
+    };
+    const m = messages[status];
+    await sendEmail({ to: sub.application.creator.user.email, subject: m.subject, ...renderEmail({ title: m.subject, paragraphs: m.paragraphs }) });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/campaigns/:id/applications/:appId/payout", validateBody(payoutUpdateSchema), async (req, res, next) => {
+  try {
+    const app = await prisma.campaignApplication.findUnique({ where: { id: req.params.appId } });
+    if (!app || app.campaignId !== req.params.id) return res.status(404).json({ error: "Aplicación no encontrada." });
+    const updated = await prisma.campaignApplication.update({
+      where: { id: app.id },
+      data: {
+        payoutStatus: req.body.payoutStatus,
+        payoutAmount: req.body.payoutAmount === undefined ? app.payoutAmount : req.body.payoutAmount,
+        payoutReference: req.body.payoutReference === undefined ? app.payoutReference : req.body.payoutReference,
+        paidAt: req.body.payoutStatus === "PAID" ? app.paidAt ?? new Date() : null,
+      },
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Subida de imágenes (portada, logo) a Vercel Blob. El navegador envía el archivo en bruto
 // con su content-type; devolvemos la URL pública. Máx. 4 MB (límite de las funciones de Vercel).
