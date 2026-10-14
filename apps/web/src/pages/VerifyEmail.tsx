@@ -64,7 +64,7 @@ export function VerifyEmail() {
             </CardHeader>
             <CardContent>
               <p className="mb-6 text-sm text-destructive">{message}</p>
-              <Link to="/registro" className="text-sm font-medium text-foreground hover:underline">
+              <Link to="/aplicar" className="text-sm font-medium text-foreground hover:underline">
                 Volver a intentar
               </Link>
             </CardContent>

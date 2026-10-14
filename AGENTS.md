@@ -14,6 +14,7 @@ One Vercel project serves everything (npm workspaces):
 | `apps/api` | Express + Prisma + PostgreSQL | API, compiled to `apps/api/dist` |
 | `api/index.js` | Vercel Node function | Wraps the Express app; all `/api/*` is rewritten here |
 | `packages/shared` | TS types | Used by web and api |
+| Email | Resend HTTP API (`apps/api/src/lib/mailer.ts`) | `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_NOTIFY_EMAIL` |
 | `scripts/vercel-build.mjs` | Build | Builds all; production only: `prisma migrate deploy` + internal accounts |
 
 Database: Neon Postgres via the Vercel Marketplace (`DATABASE_URL` pooled,
@@ -25,8 +26,12 @@ design-only Next.js version — archived, not built or deployed. Don't edit it.
 ## Golden rules — do not break these
 
 1. **Brands never get accounts.** No brand registration, no brand login links anywhere
-   public. Brands use `/contacto`; the team manages their campaigns internally. `/registro`
-   creates CREADOR accounts only. The `/marca` route (MARCA role) is an internal ops tool,
+   public. Brands use `/contacto`; the team manages their campaigns internally.
+   **Creators never self-register either:** they apply at `/aplicar`; the team gets an email
+   with a `/revisar/:token` link, approves, and the creator gets `/activar/:token` to set a
+   password. `POST /api/auth/register` is closed (403) unless `ALLOW_OPEN_SIGNUP=true`.
+   Email links must never perform actions on GET (mail scanners open links) — actions are POSTs
+   from the page. The `/marca` route (MARCA role) is an internal ops tool,
    deliberately unlinked from public navigation — keep it that way.
 2. **The API is same-origin.** The browser calls `/api/*` on the site's own domain;
    `vercel.json` rewrites it to `api/index.js`. Do not add client-side calls to another
@@ -63,8 +68,9 @@ Production accounts come from `ADMIN_*` / `OPS_*` env vars. Never commit real cr
 ## Manual test checklist
 
 Creator flow:
-1. `/registro` → new email + password → lands on the profile form (no email step)
-2. Complete profile → dashboard shows active campaigns
+1. `/aplicar` → submit application → team email arrives with "Revisar solicitud"
+2. `/revisar/:token` → Aprobar → creator email with "Crear mi cuenta" (link also shown on page)
+3. `/activar/:token` → set password → lands on `/creador`, profile pre-filled and approved
 3. Open a campaign → "Aplicar a esta campaña" → badge "Ya aplicaste · PENDING"
 4. Log out, log back in → same account and data
 

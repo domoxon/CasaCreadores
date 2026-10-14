@@ -134,3 +134,39 @@ model Payment {
   status     PaymentStatus @default(PENDING)
   createdAt  DateTime      @default(now())
 }
+
+enum ApplicationReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Solicitud para entrar a la red. Nadie tiene cuenta de creador sin una solicitud aprobada:
+// el equipo revisa (enlace por email -> /revisar/:reviewToken) y, si aprueba, el creador
+// recibe un enlace de activación (/activar/:inviteToken) para crear su contraseña.
+model CreatorApplication {
+  id              String                  @id @default(uuid())
+  name            String
+  email           String
+  country         String
+  languages       String[]                @default([])
+  contact         String
+  platforms       Json
+  followerCount   Int                     @default(0)
+  nichos          String[]                @default([])
+  contentTypes    String[]                @default([])
+  payoutMethod    String
+  bestPosts       String                  @default("")
+  bio             String                  @default("")
+  referredBy      String?
+  status          ApplicationReviewStatus @default(PENDING)
+  reviewToken     String                  @unique
+  inviteToken     String?                 @unique
+  inviteExpiresAt DateTime?
+  reviewedAt      DateTime?
+  activatedAt     DateTime?
+  userId          String?
+  createdAt       DateTime                @default(now())
+
+  @@index([email])
+}

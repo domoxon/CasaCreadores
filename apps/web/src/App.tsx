@@ -1,9 +1,11 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ScrollToHash } from "./components/ScrollToHash";
+import { Activate } from "./pages/Activate";
 import { AdminPanel } from "./pages/AdminPanel";
+import { Apply } from "./pages/Apply";
 import { BrandDashboard } from "./pages/BrandDashboard";
 import { CampaignCreate } from "./pages/CampaignCreate";
 import { CampaignDetail } from "./pages/CampaignDetail";
@@ -14,7 +16,7 @@ import { Diagnostics } from "./pages/Diagnostics";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { NotFound } from "./pages/NotFound";
-import { Register } from "./pages/Register";
+import { ReviewApplication } from "./pages/ReviewApplication";
 import { VerifyEmail } from "./pages/VerifyEmail";
 
 export default function App() {
@@ -26,7 +28,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Register />} />
+          <Route path="/aplicar" element={<Apply />} />
+          <Route path="/registro" element={<Navigate to="/aplicar" replace />} />
+          <Route path="/revisar/:token" element={<ReviewApplication />} />
+          <Route path="/activar/:token" element={<Activate />} />
           <Route path="/contacto" element={<Contact />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/diagnostico" element={<Diagnostics />} />

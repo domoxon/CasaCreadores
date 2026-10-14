@@ -11,6 +11,18 @@ import { toUserMessage } from "../lib/errors";
 type CreatorWithUser = Creator & { user: { email: string; createdAt: string } };
 type PaymentWithRelations = Payment & { brand: { companyName: string }; campaign: { title: string } };
 
+interface ApplicationRow {
+  id: string;
+  reviewToken: string;
+  name: string;
+  email: string;
+  country: string;
+  followerCount: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  activatedAt: string | null;
+  createdAt: string;
+}
+
 interface ContactMessage {
   id: string;
   name: string;
@@ -46,21 +58,24 @@ export function AdminPanel() {
   const [pendingCreators, setPendingCreators] = useState<CreatorWithUser[]>([]);
   const [payments, setPayments] = useState<PaymentWithRelations[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function loadAll() {
     setLoadError(null);
     try {
-      const [s, creators, p, m] = await Promise.all([
+      const [s, creators, p, m, apps] = await Promise.all([
         apiFetch<Stats>("/admin/stats"),
         apiFetch<CreatorWithUser[]>("/admin/creators?status=PENDING"),
         apiFetch<PaymentWithRelations[]>("/admin/payments"),
         apiFetch<ContactMessage[]>("/admin/contact-messages"),
+        apiFetch<ApplicationRow[]>("/applications"),
       ]);
       setStats(s);
       setPendingCreators(creators);
       setPayments(p);
       setMessages(m);
+      setApplications(apps);
     } catch (err) {
       setLoadError(toUserMessage(err, "No pudimos cargar el panel."));
     }
@@ -112,12 +127,49 @@ export function AdminPanel() {
         </div>
       )}
 
-      <Tabs defaultValue="creadores">
+      <Tabs defaultValue="solicitudes">
         <TabsList>
+          <TabsTrigger value="solicitudes">
+            Solicitudes ({applications.filter((a) => a.status === "PENDING").length})
+          </TabsTrigger>
           <TabsTrigger value="creadores">Creadores pendientes ({pendingCreators.length})</TabsTrigger>
           <TabsTrigger value="pagos">Pagos ({payments.length})</TabsTrigger>
           <TabsTrigger value="mensajes">Mensajes ({messages.filter((m) => !m.handled).length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="solicitudes">
+          {applications.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-20 text-center text-muted-foreground">
+              <Inbox className="h-8 w-8" strokeWidth={1.5} />
+              <p className="text-sm">Aún no hay solicitudes.</p>
+            </div>
+          ) : (
+            <div>
+              {applications.map((a) => (
+                <div key={a.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 py-5">
+                    <div>
+                      <p className="font-medium text-foreground">{a.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {a.email} · {a.country} · {a.followerCount.toLocaleString()} seguidores ·{" "}
+                        {new Date(a.createdAt).toLocaleDateString("es")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant={a.status === "APPROVED" ? "success" : a.status === "REJECTED" ? "destructive" : "warning"}>
+                        {a.activatedAt ? "Cuenta activa" : a.status === "APPROVED" ? "Aprobada" : a.status === "REJECTED" ? "Rechazada" : "Pendiente"}
+                      </Badge>
+                      <Button asChild size="sm" variant={a.status === "PENDING" ? "default" : "outline"}>
+                        <a href={`/revisar/${a.reviewToken}`}>Revisar</a>
+                      </Button>
+                    </div>
+                  </div>
+                  <Separator />
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="creadores">
           {pendingCreators.length === 0 ? (

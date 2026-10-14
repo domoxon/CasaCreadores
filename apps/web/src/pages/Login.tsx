@@ -71,9 +71,9 @@ export function Login() {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link to="/registro" className="font-medium text-foreground hover:underline">
-              Regístrate
+            ¿Aún no eres parte de la red?{" "}
+            <Link to="/aplicar" className="font-medium text-foreground hover:underline">
+              Aplica aquí
             </Link>
           </p>
         </CardContent>

@@ -21,6 +21,12 @@ function getFrontendUrl(): string {
 
 router.post("/register", authLimiter, validateBody(registerSchema), async (req, res, next) => {
   try {
+    // El registro abierto está cerrado: las cuentas de creador solo se crean desde una
+    // solicitud aprobada (ver applications.routes.ts). Se deja el resto del código por si
+    // se reabre algún día, pero hoy nunca se alcanza.
+    if (process.env.ALLOW_OPEN_SIGNUP !== "true") {
+      return res.status(403).json({ error: "Para unirte a Casa Creadores primero envía tu solicitud en /aplicar." });
+    }
     const { email, password, role } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { email } });

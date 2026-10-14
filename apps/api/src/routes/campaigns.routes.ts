@@ -153,6 +153,9 @@ router.get("/:id/applications", requireAuth, requireRole("MARCA"), async (req: A
 router.post("/:id/apply", requireAuth, requireRole("CREADOR"), async (req: AuthRequest, res, next) => {
   try {
     const creator = await getOwnCreatorOrThrow(req.user!.userId);
+    if (creator.verifiedStatus !== "VERIFIED") {
+      return res.status(403).json({ error: "Tu perfil todavía no está aprobado. Te avisaremos por email cuando lo esté." });
+    }
     const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id } });
     if (!campaign) return res.status(404).json({ error: "Campaña no encontrada." });
     if (campaign.status !== "ACTIVE") {

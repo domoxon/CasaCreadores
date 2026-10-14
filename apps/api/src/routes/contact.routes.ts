@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { getAdminNotifyEmail, renderEmail, sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { contactLimiter } from "../middleware/rateLimit";
 import { validateBody } from "../middleware/validate";
@@ -15,6 +16,15 @@ router.post("/", contactLimiter, validateBody(contactMessageSchema), async (req,
 
     await prisma.contactMessage.create({ data: { name, email, message } });
     console.log(`[CONTACTO] Nuevo mensaje de ${email}`);
+    const admin = getAdminNotifyEmail();
+    if (admin) {
+      const mail = renderEmail({
+        title: `Nuevo mensaje de ${name}`,
+        paragraphs: ["Alguien escribió desde el formulario de contacto de la web."],
+        rows: [["Nombre", name], ["Email", email], ["Mensaje", message]],
+      });
+      await sendEmail({ to: admin, subject: `Contacto web: ${name}`, ...mail });
+    }
 
     res.status(201).json({ message: "Gracias por escribirnos. Te responderemos pronto." });
   } catch (err) {

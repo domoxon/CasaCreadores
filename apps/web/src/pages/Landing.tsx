@@ -103,7 +103,7 @@ export function Landing() {
               <Link to="/contacto">Lanza tu campaña</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link to="/registro">Soy creador</Link>
+              <Link to="/aplicar">Soy creador</Link>
             </Button>
           </div>
         </div>
@@ -240,7 +240,7 @@ export function Landing() {
             <Link to="/contacto">Hablar con el equipo</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link to="/registro">Registrarme como creador</Link>
+            <Link to="/aplicar">Aplicar como creador</Link>
           </Button>
         </div>
       </section>

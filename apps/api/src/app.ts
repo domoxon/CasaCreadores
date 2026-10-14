@@ -5,6 +5,7 @@ import { isEmailDeliveryConfigured } from "./lib/email";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { apiLimiter } from "./middleware/rateLimit";
 import adminRoutes from "./routes/admin.routes";
+import applicationsRoutes from "./routes/applications.routes";
 import authRoutes from "./routes/auth.routes";
 import brandsRoutes from "./routes/brands.routes";
 import campaignsRoutes from "./routes/campaigns.routes";
@@ -31,6 +32,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/applications", applicationsRoutes);
 app.use("/api/brands", brandsRoutes);
 app.use("/api/creators", creatorsRoutes);
 app.use("/api/campaigns", campaignsRoutes);

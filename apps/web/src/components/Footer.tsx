@@ -42,7 +42,7 @@ const footerSections: { title: string; links: { title: string; to: string }[] }[
     links: [
       { title: "Cómo funciona", to: "/#como-funciona" },
       { title: "Paquetes para marcas", to: "/#paquetes" },
-      { title: "Únete como creador", to: "/registro" },
+      { title: "Únete como creador", to: "/aplicar" },
       { title: "Iniciar sesión", to: "/login" },
     ],
   },

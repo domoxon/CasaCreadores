@@ -43,7 +43,7 @@ export function Navbar() {
                 Iniciar sesión
               </Link>
               <Button asChild size="sm">
-                <Link to="/registro">Soy creador</Link>
+                <Link to="/aplicar">Soy creador</Link>
               </Button>
             </>
           )}
