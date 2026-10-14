@@ -211,7 +211,9 @@ router.patch("/submissions/:id", validateBody(submissionReviewSchema), async (re
     });
     if (!sub) return res.status(404).json({ error: "Entrega no encontrada." });
     const { status, feedback } = req.body as { status: "APPROVED" | "CHANGES_REQUESTED" | "VERIFIED"; feedback?: string | null };
-    if (status === "VERIFIED" && !sub.postUrl) {
+    const subLinks = (sub.links as Record<string, string> | null) || {};
+    const hasPost = Boolean(sub.postUrl) || ["x", "instagram", "tiktok", "youtube", "linkedin", "twitch", "other"].some((k) => subLinks[k]);
+    if (status === "VERIFIED" && !hasPost) {
       return res.status(400).json({ error: "El creador todavía no pegó el enlace del post publicado." });
     }
     const updated = await prisma.contentSubmission.update({

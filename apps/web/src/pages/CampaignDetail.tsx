@@ -209,7 +209,7 @@ export function CampaignDetail() {
         </div>
       )}
 
-      {user?.role === "CREADOR" && myApplication?.status === "ACCEPTED" && id && <CreatorWorkPanel campaignId={id} />}
+      {user?.role === "CREADOR" && myApplication?.status === "ACCEPTED" && id && <CreatorWorkPanel campaignId={id} platforms={campaign.platforms || []} />}
 
       {user?.role === "MARCA" && (
         <div>

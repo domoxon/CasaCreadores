@@ -37,13 +37,30 @@ export const payoutSchema = z.discriminatedUnion("method", [
 const httpsUrl = (msg: string) =>
   z.string().trim().max(1000).refine((v) => /^https?:\/\/\S+\.\S+/i.test(v), msg);
 
+export const DRAFT_KEY = "draft";
+export const POST_KEYS = ["x", "instagram", "tiktok", "youtube", "linkedin", "twitch", "other"] as const;
+const LINK_KEYS = [DRAFT_KEY, ...POST_KEYS] as const;
+
+const linkValue = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine((v) => v === "" || /^https?:\/\/\S+\.\S+/i.test(v), "Cada enlace debe empezar por https://");
+
+const linksSchema = z
+  .record(z.enum(LINK_KEYS), linkValue)
+  .transform((l) => Object.fromEntries(Object.entries(l).filter(([, v]) => v)) as Record<string, string>);
+
 export const submissionSchema = z.object({
-  contentUrl: httpsUrl("Pega un enlace válido (Google Drive, Dropbox…) que empiece por https://"),
+  links: linksSchema.refine((l) => Object.keys(l).length > 0, "Añade al menos un enlace."),
   notes: z.string().trim().max(2000).default(""),
 });
 
 export const publishedSchema = z.object({
-  postUrl: httpsUrl("Pega el enlace del post publicado (https://…)."),
+  links: linksSchema.refine(
+    (l) => POST_KEYS.some((k) => l[k]),
+    "Pega al menos un enlace del post publicado."
+  ),
 });
 
 export const submissionReviewSchema = z.object({

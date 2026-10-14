@@ -169,7 +169,10 @@ model ContentSubmission {
   id            String              @id @default(uuid())
   applicationId String
   application   CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  contentUrl    String
+  contentUrl    String?
+  // Enlaces por destino: draft (Drive/Dropbox) y posts publicados por red (x, instagram,
+  // tiktok, youtube, linkedin, twitch, other).
+  links         Json?
   notes         String              @default("")
   postUrl       String?
   status        SubmissionStatus    @default(SUBMITTED)

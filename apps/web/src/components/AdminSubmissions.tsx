@@ -1,6 +1,7 @@
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { LinkList } from "@/components/SubmissionLinks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ interface Row {
   applicationId: string; creatorId: string; name: string; email: string;
   payoutMethod: string | null; payoutDetails: PayoutDetails | null;
   payoutStatus: "NOT_DUE" | "DUE" | "PAID"; payoutAmount: number | null; payoutReference: string | null; paidAt: string | null;
-  submissions: Array<{ id: string; contentUrl: string; notes: string; postUrl: string | null; status: string; feedback: string | null; createdAt: string }>;
+  submissions: Array<{ id: string; contentUrl: string | null; links: Record<string, string> | null; notes: string; postUrl: string | null; status: string; feedback: string | null; createdAt: string }>;
 }
 
 const fmt = (d: string) => new Date(d).toLocaleDateString("es", { day: "numeric", month: "short" });
@@ -73,7 +74,7 @@ export function AdminSubmissions({ campaignId, defaultPayment }: { campaignId: s
     <section className="mt-12">
       <h2 className="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">Contenido y pagos</h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Flujo: el creador entrega un enlace → Aprobar (o pedir cambios) → publica y pega el post → Verificar publicado → pago pendiente → Marcar como pagado.
+        Flujo: el creador entrega un borrador (Drive/Dropbox) y/o los enlaces de sus posts → si es borrador: Aprobar o pedir cambios → con el post publicado: Verificar publicado → pago pendiente → Marcar como pagado.
       </p>
       {error && <p className="mb-3 text-sm text-destructive">{error}</p>}
       {rows.length === 0 ? (
@@ -102,18 +103,12 @@ export function AdminSubmissions({ campaignId, defaultPayment }: { campaignId: s
                       return (
                         <div key={s.id} className="flex flex-col gap-2 py-3 text-sm">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <a href={s.contentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium underline">
-                              Versión {r.submissions.length - i} · {fmt(s.createdAt)} <ExternalLink className="h-3 w-3" />
-                            </a>
+                            <span className="font-medium">Entrega {r.submissions.length - i} · {fmt(s.createdAt)}</span>
                             <Badge variant={st.variant}>{st.label}</Badge>
                           </div>
+                          <LinkList s={s} />
                           {s.notes && <p className="whitespace-pre-line text-muted-foreground">{s.notes}</p>}
                           {s.feedback && <p className="text-muted-foreground">Tu comentario: {s.feedback}</p>}
-                          {s.postUrl && (
-                            <a href={s.postUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
-                              Post publicado <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
                           {i === 0 && (s.status === "SUBMITTED" || s.status === "CHANGES_REQUESTED") && (
                             <div className="flex flex-col gap-2 sm:flex-row">
                               <Input
@@ -128,7 +123,17 @@ export function AdminSubmissions({ campaignId, defaultPayment }: { campaignId: s
                             </div>
                           )}
                           {i === 0 && s.status === "PUBLISHED" && (
-                            <Button size="sm" className="self-start" onClick={() => review(s.id, "VERIFIED")}>Verificar publicado</Button>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                              <Input
+                                placeholder="Comentario (obligatorio para pedir cambios)"
+                                value={feedback[s.id] || ""}
+                                onChange={(e) => setFeedback({ ...feedback, [s.id]: e.target.value })}
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => review(s.id, "VERIFIED")}>Verificar publicado</Button>
+                                <Button size="sm" variant="outline" onClick={() => review(s.id, "CHANGES_REQUESTED")}>Pedir cambios</Button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       );

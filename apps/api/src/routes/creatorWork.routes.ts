@@ -3,7 +3,11 @@ import { getAdminNotifyEmail, renderEmail, sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { AuthRequest, requireAuth, requireRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
-import { payoutSchema, publishedSchema, submissionSchema } from "../validators/creatorWork.validators";
+import { POST_KEYS, payoutSchema, publishedSchema, submissionSchema } from "../validators/creatorWork.validators";
+
+const LINK_LABEL: Record<string, string> = {
+  draft: "Borrador (Drive/Dropbox)", x: "X", instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", linkedin: "LinkedIn", twitch: "Twitch", other: "Otro",
+};
 
 // Lado del creador: datos de cobro y entrega de contenido. Montado en /api/creator.
 const router = Router();
@@ -72,8 +76,18 @@ router.post("/campaigns/:campaignId/submissions", validateBody(submissionSchema)
     if (!app || app.status !== "ACCEPTED") {
       return res.status(403).json({ error: "Solo puedes entregar contenido en campañas en las que fuiste seleccionado." });
     }
+    const links = req.body.links as Record<string, string>;
+    const hasPost = POST_KEYS.some((k) => links[k]);
     const submission = await prisma.contentSubmission.create({
-      data: { applicationId: app.id, contentUrl: req.body.contentUrl, notes: req.body.notes },
+      data: {
+        applicationId: app.id,
+        links,
+        contentUrl: links.draft || Object.values(links)[0],
+        notes: req.body.notes,
+        // Si ya trae el post publicado, pasa directo a "por verificar".
+        status: hasPost ? "PUBLISHED" : "SUBMITTED",
+        publishedAt: hasPost ? new Date() : null,
+      },
     });
     const admin = getAdminNotifyEmail();
     if (admin) {
@@ -81,7 +95,12 @@ router.post("/campaigns/:campaignId/submissions", validateBody(submissionSchema)
       const mail = renderEmail({
         title: `Nuevo contenido para "${app.campaign.title}"`,
         paragraphs: ["Un creador entregó contenido para revisar."],
-        rows: [["Creador", user?.email || "—"], ["Enlace", req.body.contentUrl], ...(req.body.notes ? ([["Notas", req.body.notes]] as Array<[string, string]>) : [])],
+        rows: [
+          ["Creador", user?.email || "—"],
+          ["Estado", hasPost ? "Post publicado (por verificar)" : "Borrador para revisar"],
+          ...Object.entries(links).map(([k, v]) => [LINK_LABEL[k] || k, v] as [string, string]),
+          ...(req.body.notes ? ([["Notas", req.body.notes]] as Array<[string, string]>) : []),
+        ],
         button: { label: "Revisar en el panel", url: `${(process.env.PUBLIC_SITE_URL || "https://casacreadores.vercel.app").replace(/\/+$/, "")}/admin/campanas/${app.campaign.id}` },
       });
       await sendEmail({ to: admin, subject: `Contenido entregado: ${app.campaign.title}`, ...mail });
@@ -100,9 +119,11 @@ router.patch("/submissions/:id/published", validateBody(publishedSchema), async 
     if (sub.status !== "APPROVED" && sub.status !== "PUBLISHED") {
       return res.status(400).json({ error: "Primero el equipo tiene que aprobar este contenido." });
     }
+    const merged = { ...((sub.links as Record<string, string> | null) || {}), ...req.body.links };
+    const firstPost = POST_KEYS.map((k) => merged[k]).find(Boolean) || null;
     const updated = await prisma.contentSubmission.update({
       where: { id: sub.id },
-      data: { postUrl: req.body.postUrl, status: "PUBLISHED", publishedAt: new Date() },
+      data: { links: merged, postUrl: firstPost, status: "PUBLISHED", publishedAt: new Date() },
     });
     res.json(updated);
   } catch (err) {
