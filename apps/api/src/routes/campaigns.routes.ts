@@ -8,6 +8,7 @@ import {
   campaignSchema,
   campaignStatusSchema,
 } from "../validators/campaigns.validators";
+import { campaignApplySchema } from "../validators/creatorWork.validators";
 
 const router = Router();
 
@@ -150,7 +151,7 @@ router.get("/:id/applications", requireAuth, requireRole("MARCA"), async (req: A
   }
 });
 
-router.post("/:id/apply", requireAuth, requireRole("CREADOR"), async (req: AuthRequest, res, next) => {
+router.post("/:id/apply", requireAuth, requireRole("CREADOR"), validateBody(campaignApplySchema), async (req: AuthRequest, res, next) => {
   try {
     const creator = await getOwnCreatorOrThrow(req.user!.userId);
     if (creator.verifiedStatus !== "VERIFIED") {
@@ -167,8 +168,20 @@ router.post("/:id/apply", requireAuth, requireRole("CREADOR"), async (req: AuthR
     });
     if (existing) return res.status(409).json({ error: "Ya aplicaste a esta campaña." });
 
+    // Las redes ofrecidas deben ser de la campaña (si la campaña no fija redes, se acepta "General").
+    const rates = req.body.rates as Record<string, number>;
+    const allowed = campaign.platforms.length > 0 ? campaign.platforms : ["General"];
+    const bad = Object.keys(rates).filter((p) => !allowed.includes(p));
+    if (bad.length > 0) return res.status(400).json({ error: `Esta campaña no incluye: ${bad.join(", ")}.` });
+
     const application = await prisma.campaignApplication.create({
-      data: { campaignId: campaign.id, creatorId: creator.id },
+      data: {
+        campaignId: campaign.id,
+        creatorId: creator.id,
+        platforms: Object.keys(rates),
+        requestedRates: rates,
+        pitch: req.body.pitch,
+      },
     });
     res.status(201).json(application);
   } catch (err) {

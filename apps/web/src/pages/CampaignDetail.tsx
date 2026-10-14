@@ -1,6 +1,7 @@
 import type { Campaign, CampaignApplication, Creator } from "@casa-creadores/shared";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { ApplyForm, MyApplicationCard } from "@/components/ApplyToCampaign";
 import { CreatorWorkPanel } from "@/components/CreatorWorkPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,6 @@ export function CampaignDetail() {
   const [campaign, setCampaign] = useState<CampaignWithBrand | null>(null);
   const [applications, setApplications] = useState<ApplicationWithCreator[]>([]);
   const [myApplication, setMyApplication] = useState<CampaignApplication | null>(null);
-  const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -61,20 +61,6 @@ export function CampaignDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
 
-  async function handleApply() {
-    if (!id) return;
-    setApplying(true);
-    setError(null);
-    try {
-      const app = await apiFetch<CampaignApplication>(`/campaigns/${id}/apply`, { method: "POST" });
-      setMyApplication(app);
-    } catch (err) {
-      setError(toUserMessage(err, "No se pudo aplicar a la campaña."));
-    } finally {
-      setApplying(false);
-    }
-  }
-
   async function handleDecision(appId: string, status: "ACCEPTED" | "REJECTED") {
     if (!id) return;
     await apiFetch(`/campaigns/${id}/applications/${appId}`, {
@@ -106,7 +92,7 @@ export function CampaignDetail() {
   };
   const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" }) : null);
   const facts: Array<[string, string]> = [
-    ...(campaign.paymentPerCreator != null ? ([["Pago por creador", `$${campaign.paymentPerCreator.toLocaleString("es")} USDC`]] as Array<[string, string]>) : []),
+    ...(campaign.paymentPerCreator != null ? ([["Tarifa orientativa", `~$${campaign.paymentPerCreator.toLocaleString("es")} por video`]] as Array<[string, string]>) : []),
     ...(campaign.spots != null ? ([["Plazas", String(campaign.spots)]] as Array<[string, string]>) : []),
     ["Duración", `${campaign.duration} días`],
     ...(campaign.startDate ? ([["Fechas", `${fmtDate(campaign.startDate)}${campaign.endDate ? ` – ${fmtDate(campaign.endDate)}` : ""}`]] as Array<[string, string]>) : []),
@@ -194,18 +180,15 @@ export function CampaignDetail() {
         </div>
       )}
 
-      {user?.role === "CREADOR" && (
+      {user?.role === "CREADOR" && id && (
         <div className="mb-12">
           {myApplication ? (
-            <Badge variant={STATUS_VARIANT[myApplication.status]}>
-              {myApplication.status === "ACCEPTED" ? "¡Fuiste seleccionado!" : myApplication.status === "REJECTED" ? "No seleccionado esta vez" : "Ya aplicaste · en revisión"}
-            </Badge>
+            <MyApplicationCard campaignId={id} application={myApplication} onChange={load} />
+          ) : campaign.status === "ACTIVE" ? (
+            <ApplyForm campaignId={id} platforms={campaign.platforms || []} onApplied={setMyApplication} />
           ) : (
-            <Button onClick={handleApply} disabled={applying || campaign.status !== "ACTIVE"}>
-              {applying ? "Aplicando..." : "Aplicar a esta campaña"}
-            </Button>
+            <p className="text-sm text-muted-foreground">Esta campaña no está aceptando aplicaciones.</p>
           )}
-          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         </div>
       )}
 

@@ -2,6 +2,7 @@ import type { Campaign } from "@casa-creadores/shared";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AdminApplicants, Applicant } from "@/components/AdminApplicants";
 import { AdminSubmissions } from "@/components/AdminSubmissions";
 import { Chips } from "@/components/Chips";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -15,14 +16,6 @@ import { apiFetch } from "@/lib/api";
 import { CAMPAIGN_COUNTRIES, CAMPAIGN_PLATFORMS, CAMPAIGN_STATUS_LABEL, SOCIAL_FIELDS } from "@/lib/campaignOptions";
 import { NICHOS } from "@/lib/applicationOptions";
 import { toUserMessage } from "@/lib/errors";
-
-type Applicant = {
-  id: string;
-  status: "PENDING" | "ACCEPTED" | "REJECTED";
-  appliedAt: string;
-  creator: { id: string; xHandle: string | null; igHandle: string | null; followerCount: number; nichos: string[]; user: { email: string } };
-  profile: { name: string; country: string; contact: string } | null;
-};
 
 const EMPTY = {
   title: "", description: "", brandName: "", brandWebsite: "", brandLogoUrl: "", coverImageUrl: "",
@@ -151,10 +144,6 @@ export function CampaignEditor() {
     }
   }
 
-  async function decide(appId: string, status: "ACCEPTED" | "REJECTED") {
-    await apiFetch(`/admin/campaigns/${id}/applications/${appId}`, { method: "PATCH", body: JSON.stringify({ status }) });
-    setApplicants(await apiFetch<Applicant[]>(`/admin/campaigns/${id}/applications`));
-  }
 
   if (loading) return <div className="container py-16 text-sm text-muted-foreground">Cargando…</div>;
 
@@ -251,7 +240,7 @@ export function CampaignEditor() {
 
         <Section title="Pago y fechas">
           <div className="grid gap-5 sm:grid-cols-3">
-            <Field id="paymentPerCreator" label="Pago por creador (USDC)">
+            <Field id="paymentPerCreator" label="Tarifa orientativa por video (USD)" hint="Opcional. Referencia para los creadores; cada uno propone su tarifa al aplicar.">
               <Input id="paymentPerCreator" type="number" min={0} step="any" value={form.paymentPerCreator} onChange={(e) => set("paymentPerCreator", e.target.value)} />
             </Field>
             <Field id="spots" label="Plazas (creadores)">
@@ -295,44 +284,12 @@ export function CampaignEditor() {
       {id && <AdminSubmissions key={applicants.map((a) => a.status).join()} campaignId={id} defaultPayment={campaign?.paymentPerCreator ?? null} />}
 
       {id && (
-        <section className="mt-12">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Creadores que aplicaron ({applicants.length})
-          </h2>
-          {applicants.length === 0 ? (
-            <p className="border-t border-border py-8 text-sm text-muted-foreground">Aún no hay aplicaciones.</p>
-          ) : (
-            <div className="border-t border-border">
-              {applicants.map((a) => (
-                <div key={a.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-3 py-4">
-                    <div>
-                      <Link to={`/admin/creadores/${a.creator.id}`} className="font-medium text-foreground underline-offset-4 hover:underline">
-                        {a.profile?.name || a.creator.xHandle || a.creator.igHandle || a.creator.user.email}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {a.creator.user.email} · {a.profile?.country ? `${a.profile.country} · ` : ""}
-                        {a.creator.followerCount.toLocaleString("es")} seguidores · {a.creator.nichos.join(", ")}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={a.status === "ACCEPTED" ? "success" : a.status === "REJECTED" ? "destructive" : "warning"}>
-                        {a.status === "ACCEPTED" ? "Seleccionado" : a.status === "REJECTED" ? "No seleccionado" : "Pendiente"}
-                      </Badge>
-                      {a.status === "PENDING" && (
-                        <>
-                          <Button size="sm" onClick={() => decide(a.id, "ACCEPTED")}>Aceptar</Button>
-                          <Button size="sm" variant="outline" onClick={() => decide(a.id, "REJECTED")}>Rechazar</Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Separator />
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <AdminApplicants
+          campaignId={id}
+          platforms={campaign?.platforms || []}
+          applicants={applicants}
+          onChanged={async () => setApplicants(await apiFetch<Applicant[]>(`/admin/campaigns/${id}/applications`))}
+        />
       )}
     </div>
   );

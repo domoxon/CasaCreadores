@@ -137,6 +137,20 @@ model CampaignApplication {
   status     ApplicationStatus @default(PENDING)
   appliedAt  DateTime          @default(now())
 
+  // Propuesta del creador al aplicar: redes elegidas y tarifa por video en cada una (USD).
+  platforms      String[]    @default([])
+  requestedRates Json?
+  pitch          String      @default("")
+  // Contraoferta del equipo (tarifa por red + nota) y respuesta del creador.
+  offerRates     Json?
+  offerNote      String?
+  offerStatus    OfferStatus @default(NONE)
+  offeredAt      DateTime?
+  respondedAt    DateTime?
+  responseNote   String?
+  // Tarifas acordadas (al aceptar la propuesta o la contraoferta).
+  agreedRates    Json?
+
   // Pago al creador por esta campaña (lo gestiona el equipo).
   payoutAmount    Float?
   payoutStatus    PayoutStatus @default(NOT_DUE)
@@ -146,6 +160,13 @@ model CampaignApplication {
   submissions ContentSubmission[]
 
   @@unique([campaignId, creatorId])
+}
+
+enum OfferStatus {
+  NONE
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 enum PayoutStatus {

@@ -96,6 +96,15 @@ export interface CampaignApplication {
   creatorId: string;
   status: ApplicationStatus;
   appliedAt: string;
+  platforms?: string[];
+  requestedRates?: Record<string, number> | null;
+  pitch?: string;
+  offerRates?: Record<string, number> | null;
+  offerNote?: string | null;
+  offerStatus?: "NONE" | "PENDING" | "ACCEPTED" | "DECLINED";
+  responseNote?: string | null;
+  agreedRates?: Record<string, number> | null;
+  payoutAmount?: number | null;
 }
 
 export interface Payment {

@@ -73,3 +73,22 @@ export const payoutUpdateSchema = z.object({
   payoutAmount: z.coerce.number().min(0).nullable().optional(),
   payoutReference: z.string().trim().max(200).nullable().optional(),
 });
+
+const rates = z
+  .record(z.string().min(1).max(30), z.coerce.number().min(1, "La tarifa debe ser mayor a 0.").max(100000))
+  .refine((r) => Object.keys(r).length > 0, "Indica tu tarifa para al menos una red.");
+
+export const campaignApplySchema = z.object({
+  rates,
+  pitch: z.string().trim().max(1000).default(""),
+});
+
+export const offerSchema = z.object({
+  rates,
+  note: z.string().trim().max(1000).optional().default(""),
+});
+
+export const offerResponseSchema = z.object({
+  action: z.enum(["accept", "decline"]),
+  note: z.string().trim().max(1000).optional().default(""),
+});

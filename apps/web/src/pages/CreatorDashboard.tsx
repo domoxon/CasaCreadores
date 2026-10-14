@@ -223,7 +223,7 @@ export function CreatorDashboard() {
                 <Link to={`/campanas/${a.campaign.id}`} className="font-medium text-foreground hover:underline">
                   {a.campaign.title}
                 </Link>
-                <Badge variant={STATUS_VARIANT[a.status]}>{a.status === "ACCEPTED" ? "Seleccionado" : a.status === "REJECTED" ? "No seleccionado" : "En revisión"}</Badge>
+                <Badge variant={a.status === "PENDING" && a.offerStatus === "PENDING" ? "warning" : STATUS_VARIANT[a.status]}>{a.status === "ACCEPTED" ? "Seleccionado" : a.status === "REJECTED" ? "No seleccionado" : a.offerStatus === "PENDING" ? "Contraoferta: responde" : "En revisión"}</Badge>
               </div>
               <Separator />
             </div>
@@ -253,7 +253,7 @@ export function CreatorDashboard() {
                 <p className="my-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{c.description}</p>
                 {c.paymentPerCreator != null && (
                   <p className="mb-3 text-sm font-medium text-foreground">
-                    ${c.paymentPerCreator.toLocaleString("es")} USDC por creador{c.spots != null ? ` · ${c.spots} plazas` : ""}
+                    ${c.paymentPerCreator.toLocaleString("es")} por video (orientativo){c.spots != null ? ` · ${c.spots} plazas` : ""}
                   </p>
                 )}
                 {appliedIds.has(c.id) ? (

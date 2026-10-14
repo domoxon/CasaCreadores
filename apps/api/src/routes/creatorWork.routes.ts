@@ -3,7 +3,7 @@ import { getAdminNotifyEmail, renderEmail, sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { AuthRequest, requireAuth, requireRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
-import { POST_KEYS, payoutSchema, publishedSchema, submissionSchema } from "../validators/creatorWork.validators";
+import { offerResponseSchema, POST_KEYS, payoutSchema, publishedSchema, submissionSchema } from "../validators/creatorWork.validators";
 
 const LINK_LABEL: Record<string, string> = {
   draft: "Borrador (Drive/Dropbox)", x: "X", instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", linkedin: "LinkedIn", twitch: "Twitch", other: "Otro",
@@ -125,6 +125,39 @@ router.patch("/submissions/:id/published", validateBody(publishedSchema), async 
       where: { id: sub.id },
       data: { links: merged, postUrl: firstPost, status: "PUBLISHED", publishedAt: new Date() },
     });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Responder a la contraoferta del equipo.
+router.post("/campaigns/:campaignId/offer", validateBody(offerResponseSchema), async (req: AuthRequest, res, next) => {
+  try {
+    const app = await myApplication(req.user!.userId, req.params.campaignId);
+    if (!app || app.offerStatus !== "PENDING") return res.status(404).json({ error: "No tienes una contraoferta pendiente." });
+    const accept = req.body.action === "accept";
+    const offer = (app.offerRates as Record<string, number> | null) || {};
+    const total = Object.values(offer).reduce((s, v) => s + Number(v), 0);
+    const updated = await prisma.campaignApplication.update({
+      where: { id: app.id },
+      data: accept
+        ? { offerStatus: "ACCEPTED", respondedAt: new Date(), responseNote: req.body.note || null, status: "ACCEPTED", agreedRates: offer, payoutAmount: total }
+        : { offerStatus: "DECLINED", respondedAt: new Date(), responseNote: req.body.note || null },
+    });
+    const admin = getAdminNotifyEmail();
+    if (admin) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { email: true } });
+      const title = accept ? `Contraoferta aceptada: ${app.campaign.title}` : `Contraoferta rechazada: ${app.campaign.title}`;
+      await sendEmail({
+        to: admin,
+        subject: title,
+        ...renderEmail({
+          title,
+          paragraphs: [`${user?.email || "El creador"} ${accept ? "aceptó" : "rechazó"} tu contraoferta.`, ...(req.body.note ? [`Nota: ${req.body.note}`] : [])],
+        }),
+      });
+    }
     res.json(updated);
   } catch (err) {
     next(err);

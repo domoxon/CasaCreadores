@@ -5,7 +5,7 @@ import { renderEmail, sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { AuthRequest, requireAuth, requireRole } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
-import { payoutUpdateSchema, submissionReviewSchema } from "../validators/creatorWork.validators";
+import { offerSchema, payoutUpdateSchema, submissionReviewSchema } from "../validators/creatorWork.validators";
 import {
   adminApplicationDecisionSchema,
   adminCampaignSchema,
@@ -143,9 +143,20 @@ router.patch(
       if (!application || application.campaignId !== req.params.id) {
         return res.status(404).json({ error: "Aplicación no encontrada." });
       }
+      // Aceptar directamente = se acuerda la tarifa que pidió el creador.
+      const requested = (application.requestedRates as Record<string, number> | null) || null;
+      const acceptingRequested = req.body.status === "ACCEPTED" && application.status !== "ACCEPTED";
       const updated = await prisma.campaignApplication.update({
         where: { id: application.id },
-        data: { status: req.body.status },
+        data: {
+          status: req.body.status,
+          ...(acceptingRequested && requested
+            ? {
+                agreedRates: application.agreedRates ?? requested,
+                payoutAmount: application.payoutAmount ?? Object.values(requested).reduce((s, v) => s + Number(v), 0),
+              }
+            : {}),
+        },
       });
       if (req.body.status !== "PENDING") {
         const accepted = req.body.status === "ACCEPTED";
@@ -164,6 +175,36 @@ router.patch(
     }
   }
 );
+
+// Contraoferta: el equipo propone otra tarifa por red, con una nota. El creador la acepta o rechaza en su panel.
+router.post("/campaigns/:id/applications/:appId/offer", validateBody(offerSchema), async (req, res, next) => {
+  try {
+    const application = await prisma.campaignApplication.findUnique({
+      where: { id: req.params.appId },
+      include: { campaign: true, creator: { include: { user: { select: { email: true } } } } },
+    });
+    if (!application || application.campaignId !== req.params.id) return res.status(404).json({ error: "Aplicación no encontrada." });
+    if (application.status !== "PENDING") return res.status(400).json({ error: "Solo se puede contraofertar a aplicaciones pendientes." });
+    const updated = await prisma.campaignApplication.update({
+      where: { id: application.id },
+      data: { offerRates: req.body.rates, offerNote: req.body.note || null, offerStatus: "PENDING", offeredAt: new Date(), respondedAt: null, responseNote: null },
+    });
+    const lines = Object.entries(req.body.rates as Record<string, number>).map(([k, v]) => `${k}: $${v} por video`);
+    const mail = renderEmail({
+      title: `Propuesta para "${application.campaign.title}"`,
+      paragraphs: [
+        `Nos gustaría trabajar contigo en la campaña de ${application.campaign.brandName || "la marca"}, con esta tarifa:`,
+        ...lines,
+        ...(req.body.note ? [req.body.note] : []),
+        "Acéptala o recházala desde la campaña en tu panel.",
+      ],
+    });
+    await sendEmail({ to: application.creator.user.email, subject: "Tienes una propuesta de Casa Creadores", ...mail });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // --- Entregas de contenido y pagos ---------------------------------------------------------
 
